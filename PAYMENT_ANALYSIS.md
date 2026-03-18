@@ -270,13 +270,13 @@ state=1（待支付）
 
 ### 6.1 `getpayback()` — 通用支付回调
 
-接收 JSON Body：
+接收 JSON Body（`paytype` 为可选字段，值为 2 时表示 `payurl` 经过 Base64 编码）：
 ```json
 {
   "orderid": "平台订单号",
   "code": 1,
   "payurl": "支付链接",
-  "paytype": 2  // 可选，2=base64编码
+  "paytype": 2
 }
 ```
 更新订单的 `order_url` 字段中的支付链接。
