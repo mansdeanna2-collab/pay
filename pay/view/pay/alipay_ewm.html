@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="Content-Language" content="zh-cn">
+    <meta name="apple-mobile-web-app-capable" content="no"/>
+    <meta name="apple-touch-fullscreen" content="yes"/>
+    <meta name="format-detection" content="telephone=no,email=no"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="white">
+    <meta name="renderer" content="webkit"/>
+    <meta name="force-rendering" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"/>
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <meta name="viewport"
+    content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <title>支付宝支付</title>
+    <script type="text/javascript" src="__PAY__/css/wechat/jquery.min.js"></script>
+    <script type="text/javascript" src="__PAY__/css/wechat/qrcode.js"></script>
+    <script type="text/javascript" src="__PAY__/layer/layer.js"></script>
+    <link href="__PAY__/css/wechat/wechat_pay.css" rel="stylesheet" media="screen">
+    <style>
+    .switch-tip-icon-img {
+        position: absolute;
+        left: 70px;
+        top: 70px;
+        z-index: 11;
+    }
+    h2 {
+        line-height: 50px;
+        font-family: "微软雅黑";
+        font-size: 15px;
+        letter-spacing: 2px;
+    }
+    .btn-primary {
+        filter: progid:DXImageTransform.Microsoft.gradient(enabled = false);
+    }
+    .btn-block {
+        display: block;
+        width: 100%;
+    }
+    .btn-lg, .btn-group-lg>.btn {
+        padding: 10px 16px;
+        font-size: 18px;
+        line-height: 1.33;
+        border-radius: 6px;
+    }
+    .btn-primary {
+        color: #fff;
+        background-color: #39c;
+        border-color: #2e8ab8;
+    }
+    .btn {
+        display: inline-block;
+        margin-bottom: 0;
+        font-weight: normal;
+        text-align: center;
+        vertical-align: middle;
+        cursor: pointer;
+        background-image: none;
+        border: 1px solid transparent;
+        white-space: nowrap;
+        padding: 6px 12px;
+        font-size: 14px;
+        line-height: 1.42857143;
+        border-radius: 4px;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    /* 支付宝内访问提示样式 */
+    .alipay-tip {
+        background: linear-gradient(135deg, #1677ff 0%, #36a3ff 100%);
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin: 15px auto;
+        width: 80%;
+        text-align: center;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(22, 119, 255, 0.3);
+        display: none;
+    }
+    .alipay-tip.show {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .auto-pay-loading {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #fff;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    </style>
+</head>
+
+<body>
+<div class="body">
+    <h1 class="mod-title">
+        <span class="ico_log ico-1"></span>
+    </h1>
+    <div class="mod-ct">
+        <div class="order"></div>
+        <div class="amount">￥{$data.money}</div>
+        <br>
+        <div align="center">
+            <!-- 支付宝内访问提示 -->
+            <div class="alipay-tip" id="alipayTip">
+                <span class="auto-pay-loading"></span>
+                检测到您在支付宝内访问，正在自动跳转支付...
+            </div>
+            
+            <div class="shadow">
+                <div align="center">
+                    <font class="qr-image" id="qrcode">
+                        <canvas width="250" height="250" style="display: none;"></canvas>
+                        <img alt="Scan me!" style="display: block;" src="/ewm.php?url={$data.order_url|urlencode}">
+                    </font>
+                </div>
+            </div>
+            
+            <h2>
+                <a id="qd" href="alipays://platformapi/startapp?appId=20000067&url=<?php echo urlencode($data['order_url'])?>" target="_blank" class="btn btn-primary btn-lg btn-block" style="color: #fff;text-decoration: none;text-align: center;padding: .35rem 0;display: inline-block;width: 55%;border-radius: .3rem;font-size: 27px;background-color: #428bca;border: 1px solid #428bca;letter-spacing:normal;font-weight: normal;height: 40px;">
+                    立 即 支 付
+                </a>
+            </h2>
+            
+            <h2 id="msg">距离该订单过期还有</h2>
+            <div class="time-item">
+                <strong id="hour_show"><s id="h"></s>0时</strong>
+                <strong id="minute_show"><s></s>0分</strong>
+                <strong id="second_show"><s></s>0秒</strong>
+            </div>
+            <h2>注意：发起付款页面后请勿关闭本窗口,请在有效时间内完成支付</h2>
+            <h2 style="color:red">如提示风险继续支付即可</h2>
+        </div>
+        
+        <div class="detail" id="orderDetail">
+            <dl class="detail-ct" style="display: none;">
+                <dt>商品类型</dt>
+                <dd id="productName">在线充值</dd>
+                <dt>商户订单号</dt>
+                <dd id="billId">{$data.order_num}</dd>
+                <dt>上游订单号</dt>
+                <dd id="syId">{$data.order_sy}</dd>
+                <dt>创建时间</dt>
+                <dd id="createTime">{$data.order_time}</dd>
+            </dl>
+            <a href="javascript:void(0)" class="arrow"><i class="ico-arrow"></i></a>
+        </div>
+        
+        <div class="tip">
+            <span class="dec dec-left"></span>
+            <span class="dec dec-right"></span>
+            <div class="ico-scan"></div>
+            <div class="tip-text">
+                <p>请使用支付宝扫一扫</p>
+                <p>扫描二维码完成支付</p>
+            </div>
+        </div>
+        <div class="tip-text"></div>
+    </div>
+    
+    <div class="foot">
+        <div class="inner">
+            <p>充值服务充值后立即到账,如有纠纷与本平台无关</p>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+// 检测是否在支付宝客户端内
+function isAlipayClient() {
+    var userAgent = navigator.userAgent.toLowerCase();
+    return userAgent.indexOf('alipayclient') > -1 || userAgent.indexOf('alipay') > -1;
+}
+
+// 页面加载完成后检测并自动点击
+$(function() {
+    if (isAlipayClient()) {
+        // 显示提示
+        $('#alipayTip').addClass('show');
+        
+        // 延迟500ms后自动点击支付按钮
+        setTimeout(function() {
+            var qdBtn = document.getElementById('qd');
+            if (qdBtn) {
+                // 尝试直接跳转
+                window.location.href = qdBtn.href;
+            }
+        }, 500);
+    }
+});
+
+// 倒计时
+var intDiff = parseInt({$order_time_set} * 60); // 倒计时总秒数量
+
+function timer(intDiff) {
+    window.setInterval(function() {
+        var day = 0,
+            hour = 0,
+            minute = 0,
+            second = 0; // 时间默认值
+            
+        if (intDiff > 0) {
+            day = Math.floor(intDiff / (60 * 60 * 24));
+            hour = Math.floor(intDiff / (60 * 60)) - (day * 24);
+            minute = Math.floor(intDiff / 60) - (day * 24 * 60) - (hour * 60);
+            second = Math.floor(intDiff) - (day * 24 * 60 * 60) - (hour * 60 * 60) - (minute * 60);
+        }
+        
+        if (minute == 00 && second == 00) {
+            document.getElementById('msg').innerHTML = '订单超时,请退出重新发起交易';
+        }
+        
+        if (minute <= 9) minute = '0' + minute;
+        if (second <= 9) second = '0' + second;
+        
+        $('#day_show').html(day + "天");
+        $('#hour_show').html('<s id="h"></s>' + hour + '时');
+        $('#minute_show').html('<s></s>' + minute + '分');
+        $('#second_show').html('<s></s>' + second + '秒');
+        intDiff--;
+    }, 1000);
+}
+
+$(function() {
+    timer(intDiff);
+});
+
+// 订单详情
+$('#orderDetail .arrow').click(function(event) {
+    if ($('#orderDetail').hasClass('detail-open')) {
+        $('#orderDetail .detail-ct').slideUp(500, function() {
+            $('#orderDetail').removeClass('detail-open');
+        });
+    } else {
+        $('#orderDetail .detail-ct').slideDown(500, function() {
+            $('#orderDetail').addClass('detail-open');
+        });
+    }
+});
+
+// 订单监控
+function order() {
+    $.get("../pay/orders?num={$data.order_num}&syorder={$data.order_sy}", function(result) {
+        // 成功
+        if (result.code == '200') {
+            window.clearInterval(orderlst);
+            if ({$pay_smg_set} == 1) {
+                layer.confirm(result.msg, {
+                    icon: 1,
+                    title: '支付成功',
+                    btn: ['确认']
+                }, function() {
+                    location.href = "{$data.refer}";
+                });
+            } else {
+                location.href = "{$data.refer}";
+            }
+        }
+        
+        // 订单被销毁
+        if (result.code == '1001') {
+            window.clearInterval(orderlst);
+            if ({$pay_smg_set} == 1) {
+                layer.confirm(result.msg, {
+                    icon: 2,
+                    title: '订单错误',
+                    btn: ['确认']
+                }, function() {
+                    location.href = "{$data.refer}";
+                });
+            } else {
+                location.href = "{$data.refer}";
+            }
+        }
+        
+        // 订单已经超时
+        if (result.code == '1002') {
+            window.clearInterval(orderlst);
+            if ({$pay_smg_set} == 1) {
+                layer.confirm(result.msg, {
+                    icon: 2,
+                    title: '支付超时',
+                    btn: ['确认']
+                }, function() {
+                    location.href = "{$data.refer}";
+                });
+            } else {
+                location.href = "{$data.refer}";
+            }
+        }
+    });
+}
+
+// 周期监听
+var orderlst = setInterval("order()", 5000 + Math.floor(Math.random() * 10));
+</script>
+
+<div class="copyRight"></div>
+</body>
+</html>

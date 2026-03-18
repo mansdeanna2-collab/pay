@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>正在跳转支付页面</title>
+    
+    <!-- 资源引用 -->
+    <link href="__PAY__/pay/glass/css/remixicon.css" rel="stylesheet">
+    <script src="__PAY__/pay/glass/js/tailwindcss.js"></script>
+    <!-- 支付宝 JSAPI -->
+    <script src="https://gw.alipayobjects.com/as/g/h5-lib/alipayjsapi/3.1.1/alipayjsapi.inc.min.js"></script>
+    
+    <style>
+        .active-scale:active { transform: scale(0.98); }
+        body { 
+            /* 背景图 */
+            background-image: url('__PAY__/pay/glass/img/bg.jpg');
+            background-size: cover;
+            background-position: center;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        /* 移动端适配：防止iOS橡皮筋效果 */
+        html, body { height: 100%; overflow: hidden; }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        /* layer 弹层内文字/图标改为深色，避免继承 body 的 text-white 导致看不见 */
+        .layui-layer .layui-layer-content,
+        .layui-layer .layui-layer-title,
+        .layui-layer .layui-layer-ico,
+        .layui-layer .layui-layer-ico0,
+        .layui-layer .layui-layer-btn a {
+            color: #333 !important;
+        }
+        .layui-layer-ico0 {
+            color: #333 !important;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center text-white">
+    
+    <!-- 全局遮罩 -->
+    <div class="absolute inset-0 bg-black/40 z-0"></div>
+
+    <!-- 主容器：桌面端居中卡片，移动端全屏布局 -->
+    <div class="relative z-10 w-full h-full md:h-auto md:max-w-[440px] md:rounded-[2rem] flex flex-col p-8 md:p-10 transition-all duration-300 glass-card">
+        
+        <!-- 核心内容区 -->
+        <div class="flex-1 flex flex-col items-center justify-center min-h-[300px]">
+            
+            <!-- Loading 动画 -->
+            <div id="loading-state" class="text-center w-full">
+                <div class="relative w-24 h-24 mx-auto mb-8">
+                    <!-- 外圈呼吸光环 -->
+                    <div class="absolute inset-0 bg-blue-500/30 rounded-full animate-ping"></div>
+                    <!-- 旋转圈 -->
+                    <div class="absolute inset-0 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    <!-- 中心图标 -->
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <i class="ri-shield-check-line text-4xl text-white drop-shadow-md"></i>
+                    </div>
+                </div>
+
+                <h2 class="text-2xl font-bold mb-3 tracking-wide drop-shadow-lg">正在跳转支付页面</h2>
+                
+                <p class="text-white/80 text-sm md:text-base leading-relaxed mb-8 px-4">
+                    请稍候，页面将自动跳转<br>
+                    <span class="text-xs text-white/50 mt-2 block">请勿刷新或关闭页面</span>
+                </p>
+
+                <!-- 倒计时圆环设计 -->
+                <div class="relative inline-flex items-center justify-center p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm mb-6">
+                    <span class="text-xs text-white/40 mr-3">自动跳转</span>
+                    <span class="text-2xl font-mono font-bold text-white min-w-[1.5em]" id="countdown">--</span>
+                    <span class="text-xs text-white/40 ml-1">秒</span>
+                </div>
+            </div>
+
+            <!-- 错误提示 (默认隐藏) -->
+            <div id="error-state" class="hidden text-center w-full py-8">
+                <div class="w-20 h-20 bg-red-500/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-red-500/30">
+                    <i class="ri-close-line text-5xl text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">订单超时</h3>
+                <p class="text-white/60 text-sm">获取支付链接失败，请重试</p>
+            </div>
+        </div>
+
+        <!-- 底部操作区 -->
+        <div class="mt-auto w-full pt-6 border-t border-white/10">
+            <button onclick="cancelPayment()" class="w-full h-14 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium text-base transition-all active-scale border border-white/20 flex items-center justify-center gap-2 group backdrop-blur-md shadow-lg">
+                <span>取消并返回</span>
+                <i class="ri-arrow-right-line opacity-50 group-hover:translate-x-1 transition-transform"></i>
+            </button>
+            
+        </div>
+    </div>
+
+    <!-- 脚本引用 -->
+    <script type="text/javascript" src="__PAY__/css/wechat/jquery.min.js"></script>
+    <script type="text/javascript" src="__PAY__/layer/layer.js"></script>
+    
+    <script>
+        // 配置项
+        const config = {
+            paymentType: 'alipay',
+            countdownSeconds: 60
+        };
+
+        // 变量
+        let countdownTimer = null;
+        let remainingSeconds = config.countdownSeconds;
+        let orderlst = null;
+        let isPayWaiting = false;
+
+        // 是否在支付宝内
+        function isAlipayClient() {
+            var ua = window.navigator.userAgent || '';
+            return /AlipayClient/i.test(ua);
+        }
+
+        // 切换为“支付等待”界面
+        function setPayWaitingUI() {
+            if (isPayWaiting) return;
+            isPayWaiting = true;
+
+            const titleEl = document.querySelector('#loading-state h2');
+            const descEl = document.querySelector('#loading-state p');
+            const countdownLabel = document.querySelector('#loading-state span.text-xs.text-white\\/40.mr-3');
+
+            if (titleEl) {
+                titleEl.textContent = '正在唤起支付宝支付';
+            }
+            if (descEl) {
+                descEl.innerHTML = '请在支付宝中完成支付<br><span class="text-xs text-white/50 mt-2 block">支付完成后请返回此页面查看结果</span>';
+            }
+            if (countdownLabel) {
+                countdownLabel.textContent = '支付剩余';
+            }
+        }
+
+        // 初始化
+        function initPage() {
+            // 非支付宝内打开，直接提示并不继续轮询
+            if (!isAlipayClient()) {
+                layer.confirm('请在支付宝内打开本页面完成支付', { icon: 2, title: '温馨提示', btn: ['确认'] }, function() {
+                    location.href = "{$data.refer}";
+                });
+                return;
+            }
+
+            startCountdown();
+            orderlst = setInterval("order()", 2000);
+            
+            // 简单的淡入效果
+            document.querySelector('.glass-card').style.opacity = '0';
+            setTimeout(() => {
+                document.querySelector('.glass-card').style.opacity = '1';
+            }, 100);
+        }
+
+        // 启动倒计时
+        function startCountdown() {
+            if (countdownTimer) clearInterval(countdownTimer);
+            const countdownEl = document.getElementById('countdown');
+            countdownEl.textContent = remainingSeconds;
+            
+            countdownTimer = setInterval(() => {
+                remainingSeconds--;
+                countdownEl.textContent = remainingSeconds;
+                
+                if (remainingSeconds <= 0) {
+                    clearInterval(countdownTimer);
+                    document.getElementById('loading-state').style.display = 'none';
+                    document.getElementById('error-state').classList.remove('hidden');
+                }
+            }, 1500); // 保持原逻辑1500ms
+        }
+
+        // 取消支付
+        function cancelPayment() {
+            if (countdownTimer) clearInterval(countdownTimer);
+            if (orderlst) clearInterval(orderlst);
+            window.location.href = "{$data.refer}";
+        }
+
+        // 订单状态查询
+        function order() {
+            $.get("../pay/orderc?num={$data.order_num}", function(result) {
+                if (result.code == '200') {
+                    window.clearInterval(orderlst);
+
+                    // 进入支付等待界面
+                    setPayWaitingUI();
+
+                    // 调用支付宝支付
+                    if (window.ap && typeof window.ap.tradePay === 'function') {
+                        window.ap.tradePay({
+                            orderStr: result.msg
+                        }, function (res) {
+                            // 支付结果回调，根据需要自行处理
+                            // 这里简单处理：无论成功失败都回跳到来源页
+                            window.location.href = "{$data.refer}";
+                        });
+                    } else {
+                        // 如果 JSAPI 不可用则回退原逻辑
+                        window.location.reload();
+                    }
+                }
+                if (result.code == '1001') {
+                    window.clearInterval(orderlst);
+                    if ({$pay_smg_set} == 1) {
+                        layer.confirm(result.msg, {
+                            icon: 2,
+                            title: '系统繁忙，请重新提交订单',
+                            btn: ['确认']
+                        }, function() {
+                            window.location.href = "{$data.refer}";
+                        });
+                    } else {
+                        window.location.href = "{$data.refer}";
+                    }
+                }
+            });
+        }
+        
+        window.onload = initPage;
+    </script>
+</body>
+</html>

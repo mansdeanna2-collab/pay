@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>微信支付</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
+    <style>
+        #tip-line1,#tip-line2,#tip-line3,#tip-line4 { display: none; }
+        #url-box { display: none; }
+        html,body { font-family: "微软雅黑", 'Microsoft YaHei', sans-serif; margin: 0; padding: 0; background: #fff; }
+
+        .top-bar { text-align: center; padding: 12px 0 8px; font-size: 16px; color: #333; border-bottom: 1px solid #eee; }
+
+        /* 金额展示 */
+        .amount-box { text-align: center; padding: 18px 0 10px; }
+        .amount-label { font-size: 13px; color: #999; margin-bottom: 4px; }
+        .amount-num { font-size: 38px; font-weight: bold; color: #333; }
+        .amount-num span { font-size: 20px; vertical-align: middle; margin-right: 2px; }
+
+        .tip-box {
+            margin: 14px 15px 0;
+            padding: 12px 14px;
+            background: #fff8e1;
+            border-left: 5px solid #f90;
+            font-size: 16px;
+            font-weight: bold;
+            color: #c85000;
+            line-height: 2;
+        }
+        .tip-box p { margin: 0; }
+
+        #qrcode { width: 100%; text-align: center; margin-top: 16px; }
+        #qrcode img { width: 190px; }
+        #qrcodeNode { display: none; }
+
+        .qr-hint { text-align: center; font-size: 13px; color: #999; margin-top: 8px; }
+        .order-num { text-align: center; font-size: 12px; color: #bbb; margin-top: 6px; }
+
+        #wait_time { text-align: center; font-size: 15px; font-weight: bold; color: #e00; margin: 10px 15px 0; }
+
+        .btn-area { margin: 16px 15px 0; }
+        .btn-open-wx {
+            background: #07C160;
+            color: #fff;
+            display: block;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            height: 46px;
+            line-height: 46px;
+            border-radius: 4px;
+        }
+
+        .footer { text-align: center; color: #bbb; font-size: 12px; margin-top: 24px; padding-bottom: 20px; }
+        .footer img { width: 120px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; }
+    </style>
+</head>
+<body>
+
+<div class="top-bar">微信扫码支付</div>
+
+<!-- 提示（根据环境动态显示） -->
+<div class="tip-box" id="tip-box">
+    <p id="tip-line-wx" style="display:none;">1. 长按下方二维码，松手后点击"识别图中二维码"</p>
+    <p id="tip-line-wx2" style="display:none;">2. 如遇跳转失败，截图后在微信扫一扫→相册中选取</p>
+    <p id="tip-line-browser1" style="display:none;">1. 截图保存本页面</p>
+    <p id="tip-line-browser2" style="display:none;">2. 打开微信 → 扫一扫 → 右上角相册，选择截图</p>
+    <p id="tip-line-browser3" style="display:none;">3. 或点击下方按钮直接打开微信</p>
+</div>
+
+<!-- 金额 -->
+<div class="amount-box">
+    <div class="amount-label">支付金额</div>
+    <div class="amount-num"><span>¥</span>{$data.money}</div>
+</div>
+
+<div id="tip-line1"><img src="__PAY__/img/tip_1.png"></div>
+<div id="tip-line2"><img src="__PAY__/img/tip_2.png"></div>
+<div id="tip-line3"><img src="__PAY__/img/tip_3.png"></div>
+<div id="tip-line4"><img src="__PAY__/img/tip_4.png"></div>
+
+<div id="qrcode">
+    <div id="qrcodeNode"></div>
+    <canvas width="256" height="256" style="display:none;"></canvas>
+    <canvas width="256" height="256" style="display:none;"></canvas>
+</div>
+<div class="qr-hint" id="qr-hint"></div>
+<div class="order-num">订单号：{$data.order_num}</div>
+
+<div id="wait_time">如遇风险提示，点击继续支付即可</div>
+
+<div class="btn-area" id="btn-area">
+    <a class="btn-open-wx" href="weixin://">打开微信去支付</a>
+</div>
+
+<div class="footer">
+    <img src="__PAY__/img/tip_5.png">
+    <div>充值服务充值后立即到账，如有纠纷与本平台无关</div>
+</div>
+<script src="__PAY__/pay/qq/js/qrcode.min.js"></script>
+<script src="__PAY__/pay/qq/js/qcloud_util.js"></script>
+ <script type="text/javascript" src="__PAY__/layer/layer.js"></script>
+<script>
+    function isWeixinBrowser() {
+        var ua = navigator.userAgent.toLowerCase();
+        return ua.indexOf('micromessenger') !== -1;
+    }
+
+    var orderUrl = "{$data.order_url}";
+
+    // 根据环境切换提示内容
+    if (isWeixinBrowser()) {
+        // 微信内：长按识别提示，隐藏"打开微信"按钮
+        document.getElementById('tip-line-wx').style.display = 'block';
+        document.getElementById('tip-line-wx2').style.display = 'block';
+        document.getElementById('qr-hint').innerText = '↑ 长按二维码识别';
+        document.getElementById('btn-area').style.display = 'none';
+        // 非weixin://协议则自动跳转
+        if (orderUrl && !orderUrl.startsWith('weixin://')) {
+            window.location.href = orderUrl;
+        }
+    } else {
+        // 普通浏览器：截图引导提示
+        document.getElementById('tip-line-browser1').style.display = 'block';
+        document.getElementById('tip-line-browser2').style.display = 'block';
+        document.getElementById('tip-line-browser3').style.display = 'block';
+        document.getElementById('qr-hint').innerText = '↑ 截图后在微信扫一扫→相册中选取';
+    }
+    
+    var qrcode = new QRCode("qrcodeNode", {
+        text: orderUrl,
+        width: 180,
+        height: 180,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
+    function convertCanvasToimage(canvas){
+         var img=new Image();
+         img.src=canvas.toDataURL("image/png");
+         return img;
+    }
+
+    var mycanvas=document.getElementsByTagName('canvas')[0];
+    var imghtml=convertCanvasToimage(mycanvas);
+    $("#qrcode").append(imghtml);
+    
+    //订单监控  {订单监控}
+    function order(){
+    	$.get("../pay/orders?num={$data.order_num}&syorder={$data.order_sy}", function(result){
+    		//成功
+    		if(result.code == '200'){
+				//回调页面
+        		window.clearInterval(orderlst);
+    			if({$pay_smg_set} == 1){
+    			layer.confirm(result.msg, {
+    			  icon: 1,
+    			  title: '支付成功',
+  				  btn: ['确认'] //按钮
+  				}, function(){
+  					location.href="{$data.refer}";
+  				});
+    			}else{
+        		    location.href="{$data.refer}";
+        		}
+    		}
+    		//订单被销毁
+    		if(result.code == '1001'){
+    			window.clearInterval(orderlst);
+    			if({$pay_smg_set} == 1){
+    			layer.confirm(result.msg, {
+    			  icon: 2,
+    			  title: '订单错误',
+  				  btn: ['确认'] //按钮
+  				}, function(){
+  					location.href="{$data.refer}";
+  				});
+    			}else{
+        		    location.href="{$data.refer}";
+        		}
+        	}
+        	//订单已经超时
+    		if(result.code == '1002'){
+    			window.clearInterval(orderlst);
+    			if({$pay_smg_set} == 1){
+    			layer.confirm(result.msg, {
+    			  icon: 2,
+    			  title: '支付超时',
+  				  btn: ['确认'] //按钮
+  				}, function(){
+  					location.href="{$data.refer}";
+  				});
+    			}else{
+        		    location.href="{$data.refer}";
+        		}
+        	}
+    	  });
+     }
+    //周期监听
+    var orderlst = setInterval("order()",5000+Math.floor(Math.random()*10));
+</script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="Content-Language" content="zh-cn">
+    <meta name="apple-mobile-web-app-capable" content="no"/>
+    <meta name="apple-touch-fullscreen" content="yes"/>
+    <meta name="format-detection" content="telephone=no,email=no"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="white">
+    <meta name="renderer" content="webkit"/>
+    <meta name="force-rendering" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"/>
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <meta name="viewport"
+    content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <title>微信支付</title>
+    <script type="text/javascript" src="__PAY__/css/wechat/jquery.min.js"></script>
+<script type="text/javascript" src="__PAY__/css/wechat/qrcode.js"></script>
+ <script type="text/javascript" src="__PAY__/layer/layer.js"></script>
+<link href="__PAY__/css/wechat/wechat_pay.css" rel="stylesheet" media="screen">
+
+
+<style>
+.switch-tip-icon-img {
+    position: absolute;
+    left: 70px;
+    top: 70px;
+    z-index: 11;
+
+}
+
+
+h2 {
+	line-height:50px;
+    font-family:"微软雅黑";
+    font-size:15px;
+    letter-spacing:2px;
+}
+</style>
+</head>
+<body>
+<div class="body">
+<h1 class="mod-title">
+ <span class="ico_log ico-3"></span>
+</h1>
+<div class="mod-ct">
+<div class="order">
+</div>
+<div class="amount">￥{$data.money}</div>
+<br>
+
+<div align="center">
+<div class="shadow"><div align="center">
+<font class="qr-image" id="qrcode">
+<canvas width="250" height="250" style="display: none;"></canvas><img alt="Scan me!" style="display: block;" src="/ewm.php?url=$data{"order_url"}"></font></div></div>
+<h2 id="msg">距离该订单过期还有</h2>
+<div class="time-item">
+<strong id="hour_show"><s id="h"></s>0时</strong>
+<strong id="minute_show"><s></s>0分</strong>
+<strong id="second_show"><s></s>0秒</strong>
+</div>
+
+<h2>注意：发起付款页面后请勿关闭本窗口,请在有效时间内完成支付</h2>
+<h2 style="color:red">如提示风险继续支付即可</h2>
+
+
+
+</div>
+
+<div class="detail" id="orderDetail">
+<dl class="detail-ct" style="display: none;">
+
+<dt>商品类型</dt>
+<dd id="productName">在线充值</dd>
+<dt>商户订单号</dt>
+<dd id="billId">{$data.order_num}</dd>
+<dt>上游订单号</dt>
+<dd id="syId">{$data.order_sy}</dd>
+<dt>创建时间</dt>
+<dd id="createTime">{$data.order_time}</dd>
+</dl>
+<a href="javascript:void(0)" class="arrow"><i class="ico-arrow"></i></a>
+</div>
+<div class="tip">
+<span class="dec dec-left"></span>
+<span class="dec dec-right"></span>
+<div class="ico-scan"></div>
+<div class="tip-text">
+<p>请使用微信扫一扫</p>
+<p>扫描二维码完成支付</p>
+</div>
+</div>
+<div class="tip-text">
+</div>
+</div>
+<div class="foot">
+<div class="inner">
+
+<p>充值服务充值后立即到账,如有纠纷与本平台无关</p>
+
+
+</div>
+</div>
+</div>
+	
+  <script type="text/javascript">
+var intDiff = parseInt({$order_time_set}*60);//倒计时总秒数量
+
+function timer(intDiff){
+    window.setInterval(function(){
+    var day=0,
+        hour=0,
+        minute=0,
+        second=0;//时间默认值       
+    if(intDiff > 0){
+        day = Math.floor(intDiff / (60 * 60 * 24));
+        hour = Math.floor(intDiff / (60 * 60)) - (day * 24);
+        minute = Math.floor(intDiff / 60) - (day * 24 * 60) - (hour * 60);
+        second = Math.floor(intDiff) - (day * 24 * 60 * 60) - (hour * 60 * 60) - (minute * 60);
+    }
+	if (minute == 00 && second == 00) document.getElementById('msg').innerHTML='订单超时,请退出重新发起交易';
+    if (minute <= 9) minute = '0' + minute;
+    if (second <= 9) second = '0' + second;
+    $('#day_show').html(day+"天");
+    $('#hour_show').html('<s id="h"></s>'+hour+'时');
+    $('#minute_show').html('<s></s>'+minute+'分');
+    $('#second_show').html('<s></s>'+second+'秒');
+    intDiff--;
+    }, 1000);
+} 
+$(function(){
+    timer(intDiff);
+});
+ 
+
+    // 订单详情
+    $('#orderDetail .arrow').click(function (event) {
+        if ($('#orderDetail').hasClass('detail-open')) {
+            $('#orderDetail .detail-ct').slideUp(500, function () {
+                $('#orderDetail').removeClass('detail-open');
+            });
+        } else {
+            $('#orderDetail .detail-ct').slideDown(500, function () {
+                $('#orderDetail').addClass('detail-open');
+            });
+        }
+    });
+
+    //订单监控  {订单监控}
+    function order(){
+    	$.get("../pay/orders?num={$data.order_num}&syorder={$data.order_sy}", function(result){
+    		//成功
+    		if(result.code == '200'){
+				//回调页面
+        		window.clearInterval(orderlst);
+    			if({$pay_smg_set} == 1){
+    			layer.confirm(result.msg, {
+    			  icon: 1,
+    			  title: '支付成功',
+  				  btn: ['确认'] //按钮
+  				}, function(){
+  					location.href="{$data.refer}";
+  				});
+    			}else{
+        		    location.href="{$data.refer}";
+        		}
+    		}
+    		//订单被销毁
+    		if(result.code == '1001'){
+    			window.clearInterval(orderlst);
+    			if({$pay_smg_set} == 1){
+    			layer.confirm(result.msg, {
+    			  icon: 2,
+    			  title: '订单错误',
+  				  btn: ['确认'] //按钮
+  				}, function(){
+  					location.href="{$data.refer}";
+  				});
+    			}else{
+        		    location.href="{$data.refer}";
+        		}
+        	}
+        	//订单已经超时
+    		if(result.code == '1002'){
+    			window.clearInterval(orderlst);
+    			if({$pay_smg_set} == 1){
+    			layer.confirm(result.msg, {
+    			  icon: 2,
+    			  title: '支付超时',
+  				  btn: ['确认'] //按钮
+  				}, function(){
+  					location.href="{$data.refer}";
+  				});
+    			}else{
+        		    location.href="{$data.refer}";
+        		}
+        	}
+    	  });
+     }
+    //周期监听
+    var orderlst = setInterval("order()",5000+Math.floor(Math.random()*10));
+    
+    
+    
+</script>
+
+<div class="copyRight">
+
+</div>
+
+</body></html>

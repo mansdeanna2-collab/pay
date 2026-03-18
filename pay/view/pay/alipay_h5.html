@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>支付跳转</title>
+    <script src="__PAY__/css/wechat/jquery.min.js"></script>
+    <script src="__PAY__/layer/layer.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
+        }
+        .card {
+            background: #fff;
+            padding: 40px 30px;
+            border-radius: 8px;
+            text-align: center;
+            width: 90%;
+            max-width: 320px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .amount {
+            font-size: 36px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .amount span { font-size: 20px; }
+        .status {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #eee;
+            border-top-color: #1a73e8;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn {
+            display: inline-block;
+            padding: 12px 50px;
+            background: #1a73e8;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 15px;
+        }
+        .tip {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+        .order-no {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #bbb;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="amount"><span>¥</span>{$data.money}</div>
+        <div class="spinner"></div>
+        <div class="status">正在跳转支付页面...</div>
+        <a href="{$data.order_url}" class="btn">立即支付</a>
+        <div class="tip">如未自动跳转，请点击上方按钮</div>
+        <div class="order-no">订单号：{$data.order_num}</div>
+    </div>
+
+<script>
+setTimeout(function() {
+    window.location.href = "{$data.order_url}";
+}, 1000);
+
+// 订单监控
+function checkOrder() {
+    $.get("../pay/orders?num={$data.order_num}&syorder={$data.order_sy}", function(result) {
+        if (result.code == '200') {
+            clearInterval(orderCheck);
+            if ({$pay_smg_set} == 1) {
+                layer.confirm(result.msg, { icon: 1, title: '支付成功', btn: ['确认'] }, function() {
+                    location.href = "{$data.refer}";
+                });
+            } else {
+                location.href = "{$data.refer}";
+            }
+        }
+        if (result.code == '1001' || result.code == '1002') {
+            clearInterval(orderCheck);
+            location.href = "{$data.refer}";
+        }
+    });
+}
+var orderCheck = setInterval(checkOrder, 5000);
+</script>
+</body>
+</html>

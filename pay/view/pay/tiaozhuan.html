@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>正在跳转支付页面</title>
+<style>
+.van-popup--center {
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    line-height: 300px;
+    max-width: 100%;
+}
+.van-popup--center {
+    top: 50%;
+    left: 0;
+    right: 0;
+    width: -webkit-fit-content;
+    width: fit-content;
+    max-width: calc(100vw - var(--van-padding-md)* 2);
+    margin: 0 auto;
+    transform: translateY(-50%);
+}
+.van-popup {
+    position: fixed;
+    max-height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
+    background: var(--van-popup-background);
+    transition: var(--van-popup-transition);
+    -webkit-overflow-scrolling: touch;
+}
+.open {
+    padding-top: 30px;
+}
+.open h1 {
+    font-size: 13px;
+    justify-content: center;
+    width: 100%;
+    align-items: center;
+    line-height: 40px;
+    display: flex;
+}
+.open h1 span {
+    margin-right: 10px;
+    border: 1px #eee solid;
+    width: 20px;
+    height: 20px;
+    line-height: 18px;
+    border-radius: 50%;
+    background-color: #48e9e9;
+    color: #fff;
+    font-size: 12px;
+    font-style: italic;
+}
+.open h1 img {
+    width: 20px;
+    margin: 0 10px;
+}
+.arrow {
+    position: absolute;
+    line-height: 0;
+    right: 0;
+    top: 10px;
+}
+.arrow img {
+    width: 50px;
+}
+</style>
+</head>
+<body>
+    <div role="dialog" tabindex="0" class="van-popup van-popup--center" style="z-index: 2002;width: 100%;">
+        <div class="open">
+            <h1>
+                <span>1</span>点击右上角
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAcNJREFUeF7tl1FSwzAMRN2TAScDTgacDKqZaIYksr1yKypGm5/2o12vn1ayc2nFn0vx/TcCYAKKE2ALFA8AhyBbgC1QnABboHgAeAqwBdgCxQmwBYoHgKcAW4AtUJwAW6B4AHgKZGiB59ba5x2TKHryQJoIABF83US/ts+3Gw3L/5+uJtWsyr1fv6xqfxh6AkE8dzVHAHTjR5O3mJ1pauUEBFTBbdOy+dHTBdsDIMS06iNhMfniSINVJevvHt1vcH0TQg8AKipro7FFoXoS5tWUYu2SZQHwiophZJag1VcASAo8hdL22iX2XgBOZI1Yes3OwMo8mfX+0cYJqgVgxegMwIpZMT/SXdXc7dkC4I0qOgdWwM5OqZAErAD4LzPgNLAt4yvRQgB4dZHTxTuwoVNAIu1JAWJUhxGq+2eavcqh1fIYVQizqiHH3+/pjtwu3TdBxOxs8o8uaNa7gGzccwU+6h819cIz1ER6VxbSlwkVRe/p4C31cT9DATzOYfDKBBAMOL08E5C+RMEGmYBgwOnlmYD0JQo2yAQEA04vzwSkL1GwQSYgGHB6eSYgfYmCDTIBwYDTyzMB6UsUbJAJCAacXv4HlCpQQadVpFQAAAAASUVORK5CYII=">
+                打开菜单 
+            </h1>
+            <h1>
+                <span>2</span>选择默认浏览器
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAABLxJREFUeF7tW2ty4jAMJvRg2x4Ghlt0e4sOHKbtwSA7yiBGcfS2Qul0+4sGY0uf9bL8Zdjc4e9wODxfLpdnWGocxz+45DAM+OyTPPvCz8fj8e/a4g1rLAAKw7zn8/kVlexY5w1+uxYYpQCA4kVKs3iN4/g5DMNXJRglAKytuGA9bxVAdAHQo/jxeJytvdvtPpLu0gVEGgBLYDDXp6enyX8vl8tHs4sLoff7PQS8VzoOQILnEDgNcNIghAG4RvRWoZvcqPj7+/sU2SXFOLPe7/cjfb7dbl9wHmkubbwn8IYA4JQhi7C7wPxG3K3WqgDM0+n00iqSkUMCww2AtGi744yws13dbDYiAJx1tbGCzq+4odslXAAoiKsLRcwfFWuVat0gYA0uEEwAJOUtwQSfNYVq15PcgAKhxCVzPRWAHuWvAKhBjfPLqBvgHFkQRAC4CS1/pwplzB9/b2UDLbpzcUGzVhGAVog2j8P/2+32k6YpAwDTHKU4oLkBPXfA76V6QQqmLABGmllsANbo8AWWpwyAbgBa66MA4MnSURzN5JRAXAAQVZ4zxysg04kQ/8AM4bNkMdSX4XNbPXJzaq7Afce5AgfAIm/DZFHEo8JVjgewcD7qEpwVzAAQdn9mutcxMP+sbq9UIDMXPXuglXGBvLWCFgB31QZCtp2e5GkupC/uLvQFIAhbbmXVFTcAPLvvlbQNgNQktUhtjdPKYk02La3eAGDypztqt4u3C1YJ3jHP7KhNYwG1gJD5RxDvEDxcSXJyabFgAiByZLXcQMvh1m/b76MHI21+aa5fA4C0MQhAialVW1OlBVxlm+kJrjn13LheXNRccXylO1XOBfJxgC4A8Jy/jQDYAtqTTcrm4gCA7hRnAWmBpUWy/fvKgEoKN9rQfRsq879kZtYBSLKotQGYDlhrBxpP6+yhAMgGv5/4u8kCjM7PT9QrJPN/AKw7vhCcP2zwKkGwMqhmW+SRoFqeBdYEoLdI49LqohDqSVvVdYDVzYl6HFda/6pSmAWgutqqPMBUziWeBbhjYo8bVAJaDQDXqpv6AY8auCrlksCcAKjctcq5vg0AACXrBpW5u6q7LHWD4LnYFu/JuVWCF85jt8XX3DnrwgPzuTWuqr1OeUoWWVHtDuHdPBChkQR9r+sxuBq7uqrIURCatHCFf9N7BoB1mVhMgo4WctZ4llRt8RQW1+McVw9XvsfuWlp6vqeEDavjvQDAYoIGBHg4ggTHUWQpMtEeASJOOUM9RCftrgL5CQnCBhvPwiQpjNRIhJY6vl7aK2dRkRKYchQ00kaIJCX00IEmw3J3OSV60qoVuLSGB/fCRoomJ6UQb5VoZRRv1wbGefJ/OVESBexhi2YuXSLmjzJmlZ+Vwlp0z5KlM3Egav5Z2W6p3ZPWNHewWJwt30/zx8hNNey68oKW+37TZItTgAwSJbtoxAq85p+RQ9roEABSdmgmnwERCYaa+Rs7PomQOcKHAbCCIz3ZIZcv+9IU0mutdxEj6bm1hDQAWlyw4goncOaOMkLfL3MBZ+VmYdD1fYXi4SzgkRiCU6JG90w9jalUfBUAmIwBj7pI1RwJ2o2YY2BXDHDMPw0hDHP36/Pa2yjedT3j/gGI51t01OyPIgAAAABJRU5ErkJggg==">
+                打开
+            </h1>
+            <span class="arrow"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAtdJREFUeF7lWltuwyAQJCdre7I2J2t7sjYjeSOCeewL24A/KjXBsDM7+wByC2s87xvMnxTubQ384S+E8BFCWJKArxDC56oEEHgI/f74g/9fnplDIAa/JAGI+/hB/CMPLKGA70fCo8xPgJchIJX+UgSUwIOEJRSQxn0z5GesAlTqUPuXJIBAQw2Q/e/WCOHzncNnVACAUi6I8aEqLNMKowzC87vOrxkTk2yOIP9s67sCATn5F/06Yw5gez+bFQcPAZH3ZyWAqgDLlzOFAHmflfyIHU8CaPeV7sKapYjlqvYgWke0ngcBAIy2Mz14TIkQeaaN92WEOPa9FEALo8MCwF2ntRFDJGHd7OGkEHA6XJT545ctCqgeNhYAoUMjEoyYn6+rvW+pAhrwZLEnCVAW5lOHl1YBasltIQGjtWvHymH3/CW5aYwwSW4zpHhRIYgLDztUXrB43ysMVDU/R65UARRz0vfStS15wBz3lirgIruHAZjnLXdOzwgBDwU+l5F60ksBWgIsyslyexYBmuxNlx1Sm6ui0kzmkcElMibV1bpNRuTkh2gI8JAhl8S41d7d66lRRy9qCLBmYW4idSt1NaI0BGA+CwmtbWvzTt/D8zSHlgC8r5VnLv5BaLxjzN7jeQL3IICUQGcB2JAQMSVbY/nHgOOzhNK2ugd+VSucMyS9j6MrqXRs7r6uS3bnsmUJgZqX8R06vfhJvYzvcgcoXNtdxvUgoGSYpPa7gONMchQB3NLHsdl1zFEEXNL7YPIIAi7r/SMIOKSbs8REbwVcVvpejVCNfI9Nk8W5rHd7KcBybM4y3GtQDwIuH/cxed4EDAXeuwpYtsheihbP46WAIcF7KWBY8B4EDA3eSsDw4C0ETAFeS8A04DUEDFfnW3VRUganAy9RAN3LqX+K0vLEWd+3FBD/BK7Hr7vOwv1ct0ZA10vJ05FvBpQImDLec6SXCLj8SY6Xgv4Bm5SuQcTHTi4AAAAASUVORK5CYII=">
+            </span>
+        </div>
+    </div>
+</body>
+</html>

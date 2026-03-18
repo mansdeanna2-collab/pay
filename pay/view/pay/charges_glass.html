@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>收银台</title>
+    <link rel="preload" href="__PAY__/pay/glass/fonts/remixicon.woff2?t=1690730386070" as="font" type="font/woff2" crossorigin>
+    <link href="__PAY__/pay/glass/css/remixicon.css" rel="stylesheet">
+    <script src="__PAY__/pay/glass/js/tailwindcss.js"></script>
+    <script defer src="__PAY__/pay/glass/js/alpine.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* 整页锁死，不可滚动、不可缩放 */
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            touch-action: pan-x pan-y;  /* 禁止双指缩放手势 */
+            -webkit-text-size-adjust: 100%; /* 禁止 iOS 横屏自动调整字体 */
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f7;
+            color: #1a2035;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== 上半部分 ===== */
+        .pay-top {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+        }
+
+        /* 顶部固定 header */
+        .pay-header {
+            flex-shrink: 0;
+            background: #fff;
+            border-bottom: 1px solid #f0f2f7;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .pay-header-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 8px rgba(99,102,241,0.3);
+            flex-shrink: 0;
+        }
+        .pay-header-icon i { color: #fff; font-size: 16px; }
+        .pay-header-title { font-size: 15px; font-weight: 700; color: #1a2035; }
+
+        /* 金额居中展示区 */
+        .pay-hero {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 24px;
+            background: linear-gradient(160deg, #eef2ff 0%, #f0f2f7 100%);
+            gap: 6px;
+        }
+
+        .hero-label { font-size: 11px; color: #94a3b8; letter-spacing: 0.3px; }
+
+        .amount-display {
+            display: flex;
+            align-items: baseline;
+            gap: 3px;
+        }
+        .amount-currency { font-size: 22px; font-weight: 700; color: #6366f1; align-self: flex-start; margin-top: 8px; }
+        .amount-value { font-size: 56px; font-weight: 800; color: #1a2035; line-height: 1; font-variant-numeric: tabular-nums; }
+        .amount-placeholder { font-size: 42px; font-weight: 300; color: #d1d5db; line-height: 1; letter-spacing: -1px; }
+
+        .amount-range {
+            font-size: 11px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .amount-range i { font-size: 12px; color: #b0bac9; }
+        .amount-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 11px;
+            color: #92400e;
+        }
+        .amount-hint i { font-size: 12px; color: #d97706; }
+
+        /* 支付方式 */
+        .pay-methods-section {
+            padding: 10px 20px;
+            flex-shrink: 0;
+        }
+        .section-label { font-size: 10px; font-weight: 600; color: #b0bac9; margin-bottom: 8px; letter-spacing: 0.5px; text-transform: uppercase; text-align: center; }
+        .pay-methods { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .pay-method-btn { justify-content: center; }
+        .pay-method-btn span { text-align: center; }
+        .pay-method-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 10px;
+            border: 1.5px solid #e8ecf4;
+            background: #f8f9fc;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s;
+        }
+        .pay-method-btn i { font-size: 17px; }
+        .pay-method-btn.active-wxpay  { background: #f0fdf4; border-color: #22c55e; color: #16a34a; }
+        .pay-method-btn.active-alipay { background: #eff6ff; border-color: #3b82f6; color: #2563eb; }
+
+        /* 固定金额选择 */
+        .fixed-amounts-section {
+            padding: 10px 20px 12px;
+            background: #fff;
+            border-top: 1px solid #f0f2f7;
+            flex-shrink: 0;
+        }
+        .fixed-amounts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .amt-btn {
+            height: 46px;
+            border-radius: 10px;
+            border: 1.5px solid #e8ecf4;
+            background: #f8f9fc;
+            color: #1a2035;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+        .amt-btn:active { transform: scale(0.96); }
+        .amt-btn.selected {
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            border-color: transparent;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(79,70,229,0.3);
+        }
+        .amt-btn-unit { font-size: 10px; font-weight: 500; opacity: 0.7; }
+
+        /* ===== 下半部分：键盘 + 支付按钮 ===== */
+        .pay-bottom {
+            flex-shrink: 0;
+            background: #ffffff;
+            border-top: 1px solid #f0f2f7;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+            padding: 12px 20px 20px;
+        }
+
+        /* 数字键盘 */
+        .keyboard-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 7px;
+            margin-bottom: 10px;
+        }
+        .key-btn {
+            height: 46px;
+            border-radius: 10px;
+            border: 1px solid #e8ecf4;
+            background: #fff;
+            color: #1a2035;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .key-btn:hover  { background: #f4f6fb; border-color: #d1d5db; }
+        .key-btn:active { transform: scale(0.94); background: #eef0fd; }
+        .key-btn.key-del { background: #f8f9fc; color: #94a3b8; }
+        .key-btn.key-del:hover { background: #fee2e2; color: #ef4444; border-color: #fca5a5; }
+        .key-btn i { font-size: 19px; }
+
+        /* 立即支付按钮 */
+        .btn-pay {
+            width: 100%;
+            height: 48px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px rgba(79,70,229,0.35);
+        }
+        .btn-pay:hover  { opacity: 0.92; box-shadow: 0 6px 18px rgba(79,70,229,0.45); }
+        .btn-pay:active { transform: scale(0.98); }
+        .btn-pay.disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+
+        /* 隐藏数字输入箭头 */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+    </style>
+</head>
+<body x-data="paymentLogic()">
+
+    <!-- 上半部分 -->
+    <div class="pay-top">
+
+        <!-- 顶部 header -->
+        <div class="pay-header">
+            <div class="pay-header-icon"><i class="ri-store-2-fill"></i></div>
+            <span class="pay-header-title">收银台</span>
+        </div>
+
+        <!-- 金额居中展示区 -->
+        <div class="pay-hero">
+            <div class="hero-label">付款金额</div>
+
+            <!-- 固定金额模式 -->
+            <template x-if="amountType === 'fixed'">
+                <div class="amount-display">
+                    <template x-if="!amount">
+                        <span class="amount-placeholder">- - -</span>
+                    </template>
+                    <template x-if="amount">
+                        <div style="display:flex;align-items:baseline;gap:3px;">
+                            <span class="amount-currency">¥</span>
+                            <span class="amount-value" x-text="amount"></span>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <!-- 自定义金额模式 -->
+            <template x-if="amountType !== 'fixed'">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+                    <div class="amount-display">
+                        <template x-if="!amount">
+                            <span class="amount-placeholder">0.00</span>
+                        </template>
+                        <template x-if="amount">
+                            <div style="display:flex;align-items:baseline;gap:3px;">
+                                <span class="amount-currency">¥</span>
+                                <span class="amount-value" x-text="amount"></span>
+                            </div>
+                        </template>
+                    </div>
+                    <div x-show="hasAmountLimit()" class="amount-range">
+                        <i class="ri-information-line"></i>
+                        <span>范围：</span>
+                        <span x-show="amountMin && parseFloat(amountMin) > 0" x-text="'¥' + amountMin"></span>
+                        <span x-show="amountMin && parseFloat(amountMin) > 0 && amountMax && parseFloat(amountMax) > 0"> ~ </span>
+                        <span x-show="amountMax && parseFloat(amountMax) > 0" x-text="'¥' + amountMax"></span>
+                    </div>
+                    <div x-show="gameTypeId == 2 && amount && !isMultipleOf5()" class="amount-hint">
+                        <i class="ri-information-line"></i>
+                        <span>实际支付：<strong x-text="getRoundedAmount()"></strong> 元</span>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- 支付方式 -->
+        <div class="pay-methods-section">
+            <div class="pay-methods">
+                {volist name="products" id="product"}
+                <button @click="selectedPayment = '{$product.code}'"
+                        class="pay-method-btn"
+                        :class="selectedPayment === '{$product.code}' ? ('{$product.code}' === 'wxpay' ? 'active-wxpay' : 'active-alipay') : ''">
+                    <i :class="'{$product.code}' === 'wxpay' ? 'ri-wechat-pay-fill' : 'ri-alipay-fill'"></i>
+                    <span>{$product.name}</span>
+                </button>
+                {/volist}
+            </div>
+        </div>
+
+        <!-- 固定金额选择（仅固定金额模式） -->
+        <div class="fixed-amounts-section" x-show="amountType === 'fixed'" style="display:none;">
+            <div class="fixed-amounts-grid">
+                <template x-for="(amt, idx) in fixedAmounts" :key="idx">
+                    <button type="button" @click="amount = String(amt)"
+                            class="amt-btn"
+                            :class="parseFloat(amount) === parseFloat(amt) ? 'selected' : ''">
+                        <span class="amt-btn-unit">¥</span>
+                        <span x-text="amt"></span>
+                    </button>
+                </template>
+                <template x-for="i in (3 - fixedAmounts.length % 3 === 3 ? 0 : 3 - fixedAmounts.length % 3)" :key="'pad'+i">
+                    <div></div>
+                </template>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 下半部分：键盘 + 支付按钮 -->
+    <div class="pay-bottom">
+
+        <!-- 数字键盘（仅自定义金额模式） -->
+        <div x-show="amountType !== 'fixed'" style="display:none;">
+            <div class="keyboard-grid">
+                <template x-for="key in ['1','2','3','4','5','6','7','8','9']">
+                    <button class="key-btn" @click="input(key)">
+                        <span x-text="key"></span>
+                    </button>
+                </template>
+                <button class="key-btn" @click="input('.')">.</button>
+                <button class="key-btn" @click="input('0')">0</button>
+                <button class="key-btn key-del" @click="backspace()">
+                    <i class="ri-delete-back-2-line"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 立即支付 -->
+        <button class="btn-pay" :class="!amount ? 'disabled' : ''" @click="submitPayment()">
+            立即支付
+        </button>
+
+    </div>
+
+    <!-- 隐藏表单 -->
+    <form action="/pay/charges" method="post" id="payForm" style="display:none;">
+        <input type="hidden" name="remarks" id="remarks" value="">
+        <input type="hidden" name="amount" id="amount">
+        <input type="hidden" name="mchid" value="{$pid}">
+        <input type="hidden" name="bankcode" id="bankcode">
+        <input type="hidden" name="channel" value="{$channel}">
+        <input type="hidden" name="type_id" value="{$type_id|default=0}">
+        <input type="hidden" name="game_my" value="{$game_my|default=0}">
+    </form>
+
+    <script src="__PAY__/css/wechat/jquery.min.js"></script>
+    <script src="__PAY__/layer/layer.js"></script>
+    <script>
+        // 禁止双指缩放
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1 && e.cancelable) e.preventDefault();
+        }, { passive: false });
+        // 禁止桌面端 Ctrl+滚轮缩放
+        document.addEventListener('wheel', function(e) {
+            if (e.ctrlKey) e.preventDefault();
+        }, { passive: false });
+    </script>
+    <script>
+        function paymentLogic() {
+            return {
+                amount: '',
+                selectedPayment: '{$products.0.code|default="alipay"}',
+                gameTypeId:   {$game_type_id|default=0},
+                amountType:   '{$amount_type|default="custom"}',
+                fixedAmounts: (function(){
+                    try {
+                        var raw = '{$fixed_amounts|default="[]"}';
+                        raw = raw.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+                        var arr = JSON.parse(raw);
+                        return Array.isArray(arr) ? arr.map(Number) : [];
+                    } catch(e) { return []; }
+                })(),
+                amountMin:  '{$amount_min|default=""}',
+                amountMax:  '{$amount_max|default=""}',
+                merchantName: '{$name|default="收银台"}',
+
+                selectFixedAmount(amt) { this.amount = String(amt); },
+
+                roundUpToMultipleOf5(amount) { return Math.ceil(amount / 5) * 5; },
+
+                isMultipleOf5() {
+                    if (!this.amount) return true;
+                    var a = parseFloat(this.amount);
+                    if (isNaN(a) || a <= 0) return true;
+                    return a % 5 === 0;
+                },
+
+                getRoundedAmount() {
+                    if (!this.amount) return '0.00';
+                    var a = parseFloat(this.amount);
+                    if (isNaN(a) || a <= 0) return '0.00';
+                    return this.roundUpToMultipleOf5(a).toFixed(2);
+                },
+
+                hasAmountLimit() {
+                    var min = parseFloat(this.amountMin);
+                    var max = parseFloat(this.amountMax);
+                    return (!isNaN(min) && min > 0) || (!isNaN(max) && max > 0);
+                },
+
+                input(key) {
+                    if (this.amount.length > 8) return;
+                    if (key === '.') {
+                        if (this.amount.includes('.')) return;
+                        if (this.amount === '') { this.amount = '0.'; return; }
+                    }
+                    if (this.amount === '0' && key !== '.') { this.amount = key; return; }
+                    if (this.amount.includes('.')) {
+                        var parts = this.amount.split('.');
+                        if (parts[1] && parts[1].length >= 2) return;
+                    }
+                    this.amount += key;
+                },
+
+                backspace() { this.amount = this.amount.slice(0, -1); },
+
+                submitPayment() {
+                    var a = parseFloat(this.amount);
+                    if (!this.amount || isNaN(a) || a <= 0) {
+                        layer.msg(this.amountType === 'fixed' ? '请选择付款金额' : '请输入付款金额', {icon: 0});
+                        return;
+                    }
+                    if (this.amountType !== 'fixed') {
+                        var min = parseFloat(this.amountMin);
+                        var max = parseFloat(this.amountMax);
+                        if (this.amountMin !== '' && !isNaN(min) && min > 0 && a < min) {
+                            layer.msg('付款金额不能低于 ¥' + min, {icon: 0});
+                            return;
+                        }
+                        if (this.amountMax !== '' && !isNaN(max) && max > 0 && a > max) {
+                            layer.msg('付款金额不能超过 ¥' + max, {icon: 0});
+                            return;
+                        }
+                    }
+                    if (this.gameTypeId == 2) {
+                        a = this.roundUpToMultipleOf5(a);
+                        this.amount = a.toFixed(2);
+                    }
+                    document.getElementById('amount').value = a.toFixed(2);
+                    document.getElementById('bankcode').value = this.selectedPayment;
+                    document.getElementById('payForm').submit();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

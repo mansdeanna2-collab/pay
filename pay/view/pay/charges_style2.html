@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <title>收银台</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 头部 */
+        .header {
+            background: linear-gradient(135deg, #2d8cf0 0%, #1a6dd4 100%);
+            padding: 18px 20px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .header-title { font-size: 20px; font-weight: 600; }
+        .header-secure {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 12px;
+            border-radius: 12px;
+        }
+        .header-secure svg { width: 14px; height: 14px; fill: #fff; }
+        
+        /* 主内容区 */
+        .main {
+            flex: 1;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 16px;
+            min-height: 0;
+            overflow: auto;
+            padding-top: 20px;
+        }
+        
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        /* 金额区 */
+        .amount-card {
+            padding: 24px 16px;
+            text-align: center;
+        }
+        .amount-label { font-size: 13px; color: #999; margin-bottom: 12px; }
+        .amount-display {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 4px;
+        }
+        .amount-display .symbol { font-size: 28px; font-weight: 600; color: #2d8cf0; }
+        .amount-display .value {
+            font-size: 48px;
+            font-weight: 700;
+            color: #222;
+            letter-spacing: -1px;
+        }
+        .amount-display .value.empty { color: #ddd; }
+        .amount-tip {
+            font-size: 15px;
+            color: #ff6b00;
+            margin-top: 10px;
+            min-height: 20px;
+            font-weight: 500;
+        }
+        
+        /* 备注 */
+        .remark-row {
+            padding: 12px 16px;
+            background: #fafbfc;
+            border-top: 1px solid #f0f0f0;
+            border-radius: 0 0 12px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .remark-row .label { font-size: 13px; color: #999; white-space: nowrap; }
+        .remark-row input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            color: #333;
+            outline: none;
+        }
+        .remark-row input::placeholder { color: #bbb; }
+        
+        /* 支付方式 */
+        .pay-card { padding: 16px; }
+        .pay-title { font-size: 13px; color: #999; margin-bottom: 12px; }
+        .pay-options { display: flex; gap: 10px; }
+        .pay-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 12px;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pay-btn:hover { border-color: #ccc; }
+        .pay-btn.on { border-color: #2d8cf0; background: #f0f7ff; }
+        .pay-btn .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pay-btn .icon.alipay { background: transparent; }
+        .pay-btn .icon.wxpay { background: transparent; }
+        .pay-btn .icon svg { width: 20px; height: 20px; fill: #fff; }
+        .pay-btn .icon img { width: 20px; height: 20px; object-fit: contain; }
+        .pay-btn .name { font-size: 15px; font-weight: 600; color: #333; }
+        
+        /* 键盘区 */
+        .keyboard {
+            background: #d1d5db;
+            padding: 10px;
+            flex-shrink: 0;
+            display: flex;
+            gap: 8px;
+            min-height: 240px;
+            max-height: 320px;
+            height: 38vh;
+        }
+        .keyboard-left {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .keyboard-right {
+            flex: 1;
+            display: flex;
+        }
+        .keyboard-row {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+        }
+        .key {
+            flex: 1;
+            background: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 24px;
+            font-weight: 500;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .key:active { background: #e5e7eb; }
+        .key.del {
+            background: #9ca3af;
+            color: #fff;
+        }
+        .key.del svg { width: 26px; height: 26px; fill: #fff; }
+        .key.submit {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #2d8cf0 0%, #1a6dd4 100%);
+            color: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 8px;
+        }
+        .key.submit:active { opacity: 0.9; }
+        
+        /* 底部安全 */
+        .footer-safe {
+            background: #d1d5db;
+            padding: 4px 8px 8px;
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+        .safe-item {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 10px;
+            color: #666;
+        }
+        .safe-item svg { width: 10px; height: 10px; fill: #888; }
+        
+        #payForm { display: none; }
+    </style>
+</head>
+<body>
+    <!-- 头部 -->
+    <div class="header">
+        <span class="header-title">收银台</span>
+        <span class="header-secure">
+            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+            安全支付
+        </span>
+    </div>
+    
+    <!-- 主内容 -->
+    <div class="main">
+        <!-- 金额 -->
+        <div class="card">
+            <div class="amount-card">
+                <div class="amount-label">支付金额</div>
+                <div class="amount-display">
+                    <span class="symbol">¥</span>
+                    <span class="value empty" id="amountValue">0.00</span>
+                </div>
+                <div class="amount-tip" id="amountTip"></div>
+            </div>
+            <div class="remark-row">
+                <span class="label">备注</span>
+                <input type="text" id="remark" placeholder="选填" maxlength="20">
+            </div>
+        </div>
+        
+        <!-- 支付方式 -->
+        <div class="card pay-card">
+            <div class="pay-title">选择支付方式</div>
+            <div class="pay-options">
+                {volist name="products" id="product"}
+                <div class="pay-btn {if condition='$product.id eq 1'}on{/if}" data-code="{$product.code}">
+                    <div class="icon {$product.code}">
+                        {if $product.code == 'alipay'}
+                        <img src="data:image/x-icon;base64,AAABAAEAICAAAAEAIACoEAAAFgAAACgAAAAgAAAAQAAAAAEAIAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP93Gy7/dxar/3gX4f93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//eBff/3cWq/94GjAAAAAAAAAAAAAAAAD/eBhq/3cW+/93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW+/94GGoAAAAA/3cbLv93Fvv/dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW+/96GzD/dxar/3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3gXq/94F9//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//eBff/3cW//93Fv//dxb//3cW//93Fv//ehz//6Rj///Iof//2Lz//97H///Mqf//uon//5dM//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//4Uu//+8jP//dxb//3cW//93Fv//dxb//51Y///z6v///////////////////////////////////////+fW//+udf//eBj//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//5hO///Ssv///Pv///////93Fv//dxb//3cW//+kY////v7///Pr///DmP//o2H//5ZL//+hX///t4P//+PQ///////////////////gyv//iTX//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//ex3//6tv///m1P///////////////////////3cW//93Fv//fyT///fx///Zvv//gCX//3cW//93Fv//dxb//3cW//93Fv//dxb//5lQ///m1P/////////////49P//oV///3cW//93Fv//dxb//3cW//93Fv//hC3//72O///07P//////////////////////////////////dxb//3cW//+qbv//9O3//34i//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3se///Jo//////////////8+v//oFz//3cW//93Fv//kEH//82q///8+v////////////////////////////////////////////93Fv//dxb//8CT///Rsf//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//+/kv/////////////7+P//snz//9q//////////////////////////////////////////////+fW///Blf//oFz//3cW//93Fv//vY7//9q///93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW///Kpf/////////////////////////////////////////////+/v//4Mr//7N+//+INP//dxb//3cW//93Fv//dxb//3cW//+cVf///fz//5JF//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//99If//tH////Dl///////////////////////////////////p2f//uIX//4gz//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3gY///l0///8+v//6Vl//94GP//dxb//3cW//93Fv//dxb//3ka//+ZUP//yqX///jz///////////////////////////////////dxv//kkX//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//5BB///07P////////Xu///Xu///0K7//9Ky///gyv//+vf/////////////////////////////8+r//+3g/////////////+zf//94GP//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//4g0///Xu////f3///////////////////////////////////v5///gyv//vpD//5VK//94F///mE7//////////////////6hq//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//+GMP//r3b//7yM///FnP//uon//6pt//+WS///ex3//3cW//93Fv//dxb//3cW//93Fv//4cz/////////////6Nj//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//+tc///////////////////lEn//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//4En///8+//////////////Ak///dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//pGT///n0///59P//+fT///n0///59P//+fT///n0///59P//+fT///n0///59P//+fT///7+/////////////+vd//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//+FL///oV7//6Fe//+hXv//oV7//6Fe//+hXv//9/H/////////////7eD//6Bd//+gXf//oF3//6Bd//+gXf//oF3//3kZ//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW///z6v/////////////l0///dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//+gXf//sXr//7F6//+xev//sXr//7F6//+xev//sXr///j0//////////////Dm//+ye///snv//7J7//+ye///snv//7J7//+ye///lUr//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//8ig///o2P//6Nj//+jY///o2P//6Nj//+jY///o2P///Pv/////////////+vf//+jX///o1///6Nf//+jX///o1///6Nf//+jX//+yfP//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW///x5//////////////l0///dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb///Hn/////////////+XT//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//8ef/////////////5dP//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//eBfh/3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//+0f///yKH//8ih//+5h///dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3gX3/93Fqv/dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//eBer/3cbLv93Fvv/dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW+/96GzAAAAAA/3gYav93Fvv/dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fvv/eBhqAAAAAAAAAAAAAAAA/3cbLv93Fqv/eBfh/3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//93Fv//dxb//3cW//94F9//dxar/3gaMAAAAAAAAAAA4AAAB8AAAAOAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAABwAAAA+AAAAc=" alt="alipay">
+                        {else}
+                        <img src="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAABILAAASCwAAAAAAAAAAAAAAAAAAGa0aABmtGg4ZrRoOGa0aABmtGgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmtGgAZrRpGGa0arBmtGkEZrRobGa0aOBmtGkwZrRpNGa0aORmtGhoZrRoDGa0aAAAAAAAAAAAAAAAAAAAAAAAZrRoAGa0aKBmtGucZrRrwGa0a3BmtGvIZrRr6Ga0a+xmtGvMZrRrYGa0alxmtGjcZrRoCGa0aAAAAAAAZrRoAGa0aBhmtGnMZrRr1Ga0a/xmtGv8ZrRr/Ga0a/xmtGv8ZrRr/Ga0a/xmtGv8ZrRroGa0adBmtGgkZrRoAGa0aAhmtGnEZrRr2Ga0a/xmtGv8ZrRr/Ga0a/xmtGv8ZrRr/Ga0a/xmtGv8ZrRr/Ga0a/xmtGvgZrRp5Ga0aAxmtGkEZrRrmGa0a/xmtGv8ZrRr+Ga0a8RmtGvsZrRr/Ga0a/xmtGv8ZrRr/Ga0a/xmtGv8ZrRr/Ga0a6hmtGkkZrRqlGa0a/xmtGv8ZrRr/Ga0a5RmtGkwZrRpzGa0a3hmtGv8ZrRr/Ga0a/xmtGv8ZrRr/Ga0a/xmtGv8ZrRqvGa0a3xmtGv8ZrRr/Ga0a/xmtGpkZrRoDGa0aABmtGicZrRqWGa0a7hmtGv8ZrRr/Ga0a/xmtGv8ZrRr/Ga0a5xmtGusZrRr/Ga0a/xmtGu0ZrRo9Ga0aPBmtGmcZrRohGa0aAxmtGj8ZrRq0Ga0a+BmtGv8ZrRr/Ga0a/xmtGvIZrRrQGa0a/xmtGv8ZrRrLGa0agRmtGukZrRr+Ga0a3RmtGosZrRowGa0aEBmtGlsZrRrNGa0a/RmtGv8ZrRrYGa0agxmtGv0ZrRr/Ga0a+hmtGvsZrRr/Ga0a/xmtGv8ZrRr/Ga0a6hmtGqIZrRpDGa0aJRmtGnsZrRrhGa0ajBmtGiAZrRrHGa0a/xmtGv8ZrRr/Ga0a/xmtGv8ZrRr/Ga0a/xmtGv8ZrRr/Ga0a9BmtGrcZrRpdGa0aOxmtGhoZrRoAGa0aPBmtGtcZrRr/Ga0a/xmtGv8ZrRr/Ga0a/xmtGv8ZrRr/Ga0a/xmtGv8ZrRr/Ga0a1BmtGiwZrRoAGa0aABmtGgAZrRowGa0arRmtGvQZrRr/Ga0a/xmtGv8ZrRr/Ga0a/xmtGv8ZrRr2Ga0asRmtGjQZrRoAGa0aAAAAAAAZrRoAGa0aABmtGgsZrRpFGa0ajRmtGrsZrRrPGa0azxmtGr0ZrRqQGa0aSBmtGgwZrRoAGa0aAAAAAAAAAAAAAAAAAAAAAAAAAAAAGa0aABmtGgEZrRoKGa0aFBmtGhUZrRoKGa0aARmtGgAAAAAAAAAAAAAAAAAAAAAAz/8AAMAPAADAAwAAgAEAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAgAEAAMADAADgBwAA+B8AAA==" alt="wxpay">
+                        {/if}
+                    </div>
+                    <span class="name">{$product.name}</span>
+                </div>
+                {/volist}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 数字键盘 -->
+    <div class="keyboard">
+        <div class="keyboard-left">
+            <div class="keyboard-row">
+                <button type="button" class="key" data-num="1">1</button>
+                <button type="button" class="key" data-num="2">2</button>
+                <button type="button" class="key" data-num="3">3</button>
+            </div>
+            <div class="keyboard-row">
+                <button type="button" class="key" data-num="4">4</button>
+                <button type="button" class="key" data-num="5">5</button>
+                <button type="button" class="key" data-num="6">6</button>
+            </div>
+            <div class="keyboard-row">
+                <button type="button" class="key" data-num="7">7</button>
+                <button type="button" class="key" data-num="8">8</button>
+                <button type="button" class="key" data-num="9">9</button>
+            </div>
+            <div class="keyboard-row">
+                <button type="button" class="key" data-num=".">.</button>
+                <button type="button" class="key" data-num="0">0</button>
+                <button type="button" class="key del" id="keyDel">
+                    <svg viewBox="0 0 24 24"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="keyboard-right">
+            <button type="button" class="key submit" id="keySubmit">确认<br>支付</button>
+        </div>
+    </div>
+    
+    <!-- 安全提示 -->
+    <div class="footer-safe">
+        <div class="safe-item">
+            <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg>
+            加密传输
+        </div>
+        <div class="safe-item">
+            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+            安全保障
+        </div>
+        <div class="safe-item">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            认证商户
+        </div>
+    </div>
+
+    <form action="/pay/charges" method="post" id="payForm">
+        <input type="hidden" name="remarks" id="remarks">
+        <input type="hidden" name="amount" id="amount">
+        <input type="hidden" name="mchid" value="{$pid}">
+        <input type="hidden" name="bankcode" id="bankcode">
+    </form>
+
+    <script src="__PAY__/css/wechat/jquery.min.js"></script>
+    <script src="__PAY__/layer/layer.js"></script>
+    <script>
+    $(function() {
+        var code = $('.pay-btn.on').data('code') || 'alipay';
+        var amount = '';
+        
+        // 支付方式选择
+        $('.pay-btn').click(function() {
+            $('.pay-btn').removeClass('on');
+            $(this).addClass('on');
+            code = $(this).data('code');
+        });
+
+        // 更新金额显示
+        function updateDisplay() {
+            var display = amount || '0.00';
+            $('#amountValue').text(display);
+            if (amount) {
+                $('#amountValue').removeClass('empty');
+                // 显示向上取整提示
+                var a = parseFloat(amount);
+                if (!isNaN(a) && a > 0 && a % 5 !== 0) {
+                    var rounded = Math.ceil(a / 5) * 5;
+                    $('#amountTip').text('实际支付: ¥' + rounded.toFixed(2));
+                } else {
+                    $('#amountTip').text('');
+                }
+            } else {
+                $('#amountValue').addClass('empty');
+                $('#amountTip').text('');
+            }
+        }
+
+        // 数字键盘
+        $('.key[data-num]').click(function() {
+            var num = $(this).data('num').toString();
+            
+            // 小数点处理
+            if (num === '.') {
+                if (amount.indexOf('.') !== -1) return;
+                if (amount === '') amount = '0';
+            }
+            
+            // 限制小数位数
+            if (amount.indexOf('.') !== -1) {
+                var parts = amount.split('.');
+                if (parts[1] && parts[1].length >= 2) return;
+            }
+            
+            // 限制整数位数
+            if (amount.indexOf('.') === -1 && amount.length >= 6 && num !== '.') return;
+            
+            // 防止多个0开头
+            if (amount === '0' && num !== '.' && num !== '0') {
+                amount = num;
+            } else if (amount === '0' && num === '0') {
+                return;
+            } else {
+                amount += num;
+            }
+            
+            updateDisplay();
+        });
+
+        // 删除键
+        $('#keyDel').click(function() {
+            amount = amount.slice(0, -1);
+            updateDisplay();
+        });
+
+        // 确认支付
+        $('#keySubmit').click(function() {
+            var a = parseFloat(amount);
+            if (isNaN(a) || a <= 0) {
+                layer.msg('请输入支付金额', {icon: 0});
+                return;
+            }
+            if (a % 5 !== 0) a = Math.ceil(a / 5) * 5;
+            
+            $('#amount').val(a.toFixed(2));
+            $('#remarks').val($('#remark').val());
+            $('#bankcode').val(code);
+            $('#payForm').submit();
+        });
+
+        // 阻止备注输入框唤起系统键盘后页面滚动
+        $('#remark').on('focus', function() {
+            setTimeout(function() {
+                window.scrollTo(0, 0);
+            }, 100);
+        });
+    });
+    </script>
+</body>
+</html>

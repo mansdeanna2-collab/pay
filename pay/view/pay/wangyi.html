@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>正在跳转支付页面</title>
+    <link rel="preload" href="__PAY__/pay/glass/fonts/remixicon.woff2" as="font" type="font/woff2" crossorigin>
+    <link href="__PAY__/pay/glass/css/remixicon.css" rel="stylesheet">
+    <script src="__PAY__/pay/glass/js/tailwindcss.js"></script>
+    <script type="text/javascript" src="__PAY__/css/wechat/jquery.min.js"></script>
+    <script type="text/javascript" src="__PAY__/layer/layer.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        html, body {
+            touch-action: pan-x pan-y;
+            -webkit-text-size-adjust: 100%;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f7;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a2035;
+            padding: 16px;
+        }
+        .pay-card {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 420px;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .pay-card.visible { opacity: 1; }
+
+        .pay-card-header {
+            padding: 24px 28px 20px;
+            border-bottom: 1px solid #f0f2f7;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+            flex-shrink: 0;
+        }
+        .header-icon i { color: #fff; font-size: 20px; }
+        .header-title { font-size: 16px; font-weight: 700; color: #1a2035; }
+        .header-sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+        .pay-card-body { padding: 32px 28px; }
+
+        /* 加载动画 */
+        .loading-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .spinner-ring {
+            width: 72px;
+            height: 72px;
+            position: relative;
+        }
+        .spinner-ring::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 3px solid #e0e7ff;
+            border-top-color: #6366f1;
+            animation: spin 0.8s linear infinite;
+        }
+        .spinner-ring-inner {
+            position: absolute;
+            inset: 10px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #eef0fd, #e0e7ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .spinner-ring-inner i { font-size: 22px; color: #6366f1; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-title { font-size: 17px; font-weight: 700; color: #1a2035; text-align: center; }
+        .loading-desc { font-size: 13px; color: #94a3b8; text-align: center; line-height: 1.6; }
+
+        /* 倒计时 */
+        .countdown-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f4f6fb;
+            border: 1px solid #e8ecf4;
+            border-radius: 12px;
+            padding: 10px 20px;
+        }
+        .countdown-label { font-size: 12px; color: #94a3b8; }
+        .countdown-num { font-size: 22px; font-weight: 700; color: #6366f1; font-variant-numeric: tabular-nums; min-width: 1.6em; text-align: center; }
+        .countdown-unit { font-size: 12px; color: #94a3b8; }
+
+        /* 错误状态 */
+        .error-wrap {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        .error-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #fee2e2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .error-icon i { font-size: 28px; color: #ef4444; }
+        .error-title { font-size: 16px; font-weight: 700; color: #1a2035; text-align: center; }
+        .error-msg { font-size: 13px; color: #94a3b8; text-align: center; }
+
+        /* 底部 */
+        .pay-card-footer { padding: 0 28px 24px; }
+        .btn-cancel {
+            width: 100%;
+            height: 48px;
+            border-radius: 12px;
+            border: 1px solid #e8ecf4;
+            background: #fff;
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn-cancel:hover { background: #f4f6fb; color: #1a2035; border-color: #d1d5db; }
+        .btn-cancel:active { transform: scale(0.98); }
+        .btn-cancel i { font-size: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="pay-card" id="mainCard">
+
+        <!-- 头部 -->
+        <div class="pay-card-header">
+            <div class="header-icon">
+                <i class="ri-secure-payment-line"></i>
+            </div>
+            <div>
+                <div class="header-title">正在跳转支付页面</div>
+                <div class="header-sub">请稍候，页面将自动跳转</div>
+            </div>
+        </div>
+
+        <!-- 主体 -->
+        <div class="pay-card-body">
+
+            <!-- 加载状态 -->
+            <div id="loading-state" class="loading-wrap">
+                <div class="spinner-ring">
+                    <div class="spinner-ring-inner">
+                        <i class="ri-secure-payment-line"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="loading-title">正在跳转支付页面</div>
+                    <div class="loading-desc" style="margin-top:6px;">请勿刷新或关闭页面</div>
+                </div>
+                <div class="countdown-box">
+                    <span class="countdown-label">自动跳转</span>
+                    <span class="countdown-num" id="countdown">--</span>
+                    <span class="countdown-unit">秒</span>
+                </div>
+            </div>
+
+            <!-- 失败状态 -->
+            <div id="error-state" class="error-wrap">
+                <div class="error-icon">
+                    <i class="ri-time-line"></i>
+                </div>
+                <div class="error-title">订单超时</div>
+                <div class="error-msg">获取支付链接失败，请重试</div>
+            </div>
+
+        </div>
+
+        <!-- 底部 -->
+        <div class="pay-card-footer">
+            <button class="btn-cancel" onclick="cancelPayment()">
+                <i class="ri-arrow-left-line"></i>
+                <span>取消并返回</span>
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const config = {
+            paymentType: 'alipay',
+            countdownSeconds: 60
+        };
+
+        let countdownTimer = null;
+        let remainingSeconds = config.countdownSeconds;
+        let orderlst = null;
+
+        function initPage() {
+            // 淡入
+            setTimeout(function() {
+                document.getElementById('mainCard').classList.add('visible');
+            }, 50);
+            startCountdown();
+            orderlst = setInterval(order, 2000);
+        }
+
+        function startCountdown() {
+            if (countdownTimer) clearInterval(countdownTimer);
+            var countdownEl = document.getElementById('countdown');
+            countdownEl.textContent = remainingSeconds;
+
+            countdownTimer = setInterval(function() {
+                remainingSeconds--;
+                countdownEl.textContent = remainingSeconds;
+                if (remainingSeconds <= 0) {
+                    clearInterval(countdownTimer);
+                    document.getElementById('loading-state').style.display = 'none';
+                    var errEl = document.getElementById('error-state');
+                    errEl.style.display = 'flex';
+                }
+            }, 1500);
+        }
+
+        function cancelPayment() {
+            if (countdownTimer) clearInterval(countdownTimer);
+            if (orderlst) clearInterval(orderlst);
+            window.location.href = "{$data.refer}";
+        }
+
+        function order() {
+            $.get("../pay/orderc?num={$data.order_num}", function(result) {
+                if (typeof result === 'string') {
+                    try { result = JSON.parse(result); } catch(e) { return; }
+                }
+                if (result.code == 200) {
+                    window.clearInterval(orderlst);
+                    window.location.href = window.location.href;
+                }
+                if (result.code == 1001) {
+                    window.clearInterval(orderlst);
+                    if ({$pay_smg_set} == 1) {
+                        layer.confirm(result.msg, {
+                            icon: 2,
+                            title: '系统繁忙，请重新提交订单',
+                            btn: ['确认']
+                        }, function() {
+                            window.location.href = "{$data.refer}";
+                        });
+                    } else {
+                        window.location.href = "{$data.refer}";
+                    }
+                }
+            });
+        }
+
+        window.onload = initPage;
+
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1 && e.cancelable) e.preventDefault();
+        }, { passive: false });
+        document.addEventListener('wheel', function(e) {
+            if (e.ctrlKey) e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
